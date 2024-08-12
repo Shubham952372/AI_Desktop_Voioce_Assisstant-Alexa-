@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijkstra's Algorithm</title>
+    <style>
+        /* Styles for the graph container and output */
+        body {
+            font-family: Georgia, serif;
+            background-color: #df9dd5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            max-height: 800px;
+            margin: 20px auto;
+            background-color: #81ef99;
+            padding: 20px;
+            border-radius: 50px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #output {
+            margin-top: 20px;
+            background-color: #7ba4ea;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styles for tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #d1e07a;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #86c9eb;
+        }
+
+        /* Styles for form elements */
+        #form-container {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        select, input[type="text"] {
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #de7c7c;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #ed81ed;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #a3d3f4;
+        }
+
+        /* Style for total section */
+        #total {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #828486;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        #total span {
+            color: rgb(500, 500, 200);
+            background-color: #333;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Output section -->
+        <div id="output"></div>
+
+        <!-- Form for selecting source and destination nodes -->
+        <div id="form-container">
+            <label for="source">Starting Node in the Network:</label>
+            <input type="text" id="source" placeholder="Enter Initial Node">
+
+            <label for="destination">Ending Node in the Network:</label>
+            <input type="text" id="destination" placeholder="Enter Final node">
+
+            <button id="calculate">Finding the Shortest Path in the network</button>
+        </div>
+
+        <!-- Total section -->
+        <div id="total"></div>
+    </div>
+
+    <!-- JavaScript code -->
+    <script>
+        function dijkstra(graph, start) {
+            let pq = [];
+            let distances = {};
+            let previousNodes = {};
+            let visited = new Set();
+
+            // Initialize distances and previousNodes
+            for (let node in graph) {
+                distances[node] = Infinity;
+                previousNodes[node] = null;
+            }
+            distances[start] = 0;
+
+            // Initialize priority queue with start node
+            pq.push([0, start]);
+
+            while (pq.length > 0) {
+                let [currentDistance, currentNode] = pq.shift();
+
+                // If node has already been visited, skip processing
+                if (visited.has(currentNode)) continue;
+                
+                // Mark the current node as visited
+                visited.add(currentNode);
+
+                // Check all neighboring nodes and update distances
+                for (let neighbor in graph[currentNode]) {
+                    let weight = graph[currentNode][neighbor];
+                    let distance = currentDistance + weight;
+                    
+                    // If found a shorter path to neighbor, update and push to priority queue
+                    if (distance < distances[neighbor]) {
+                        distances[neighbor] = distance;
+                        previousNodes[neighbor] = currentNode;
+                        pq.push([distance, neighbor]);
+                    }
+                }
+
+                // Sort priority queue based on distance
+                pq.sort((a, b) => a[0] - b[0]);
+            }
+
+            return [distances, previousNodes];
+        }
+
+        function buildShortestPath(previousNodes, target) {
+            let path = [];
+            while (target !== null) {
+                path.push(target);
+                target = previousNodes[target];
+            }
+            return path.reverse();
+        }
+
+        function printDistanceTable(distances, previousNodes) {
+            let outputDiv = document.getElementById('output');
+            let data = [];
+            for (let node in distances) {
+                let dist = distances[node];
+                let path = buildShortestPath(previousNodes, node);
+                let weightPath = [];
+                for (let i = 0; i < path.length - 1; i++) {
+                    let source = path[i];
+                    let dest = path[i + 1];
+                    weightPath.push(graph[source][dest]);
+                }
+                data.push([node, dist, path.join(' -> '), weightPath.join(' -> ')]);
+            }
+
+            // Prepare the table HTML
+            let tableHTML = "<h3>Shortest distances from the start node with path and weights:</h3>";
+            tableHTML += "<table>";
+            tableHTML += "<tr><th>Node</th><th>Distance</th><th>Shortest Path</th><th>Weights</th></tr>";
+            data.forEach(row => {
+                tableHTML += "<tr>";
+                row.forEach(cell => {
+                    tableHTML += "<td>" + cell + "</td>";
+                });
+                tableHTML += "</tr>";
+            });
+            tableHTML += "</table>";
+
+            // Set the table HTML to the output div
+            outputDiv.innerHTML = tableHTML;
+        }
+
+        function displayShortestPath(sourceNode, destinationNode, shortestPath, totalCost) {
+            let outputDiv = document.getElementById('output');
+            let pathHTML = "<p>Shortest path from " + sourceNode + " to " + destinationNode + ": " + shortestPath.join(' -> ') + "</p>";
+            let costHTML = "<p>Total <span>cost</span>: " + totalCost + "</p>";
+            outputDiv.innerHTML += pathHTML + costHTML;
+        }
+
+        // Provided graph
+        let graph = {
+            'T': {'U': 2, 'V': 4, 'Y':7},
+            'U': {'T': 2, 'V': 3, 'W': 3,},
+            'V': {'T': 4, 'U': 3, 'W': 4, 'X':3, 'Y':8},
+            'W': {'V': 4, 'U': 3, 'X': 3},
+            'X': {'Z': 8, 'Y': 6, 'V':3 , 'W':6},
+            'Y': {'Z': 12, 'T':7, 'V':8, 'X':6},
+            'Z': {'X':8, 'Y':12}
+        };
+
+        // Event listener for button click
+        document.getElementById('calculate').addEventListener('click', function() {
+            let sourceNode = document.getElementById('source').value;
+            let destinationNode = document.getElementById('destination').value;
+
+            // Perform Dijkstra's algorithm
+            let [distances, previousNodes] = dijkstra(graph, sourceNode);
+
+            // Print shortest distances table with path and weights
+            printDistanceTable(distances, previousNodes);
+
+            // Find and display shortest path from source to destination
+            let shortestPath = buildShortestPath(previousNodes, destinationNode);
+            if (shortestPath.length > 0) {
+                let totalCost = distances[destinationNode];
+                displayShortestPath(sourceNode, destinationNode, shortestPath, totalCost);
+            } else {
+                let outputDiv = document.getElementById('output');
+                outputDiv.innerHTML += "<p>No path exists from " + sourceNode + " to " + destinationNode + ".</p>";
+            }
+
+            // Display total
+            document.getElementById('total').innerHTML = "Total nodes processed: <span>" + Object.keys(distances).length + "</span>";
+        });
+    </script>
+</body>
+</html>
